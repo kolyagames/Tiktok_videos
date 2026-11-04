@@ -12,7 +12,7 @@
 6. `git add`, commit, `git push origin main`. Ссылка: `https://raw.githubusercontent.com/kolyagames/Tiktok_videos/main/videos/<файл>.mp4` (проверь curl -I = 200).
 7. Metricool (brand/blogId 7872482, timezone Asia/Jerusalem): `createScheduledPost`, providers tiktok + youtube, время завтра 12:00 и 18:00 по Иерусалиму (ролик 1 и ролик 2). Для YouTube: youtubeData {type: "short", title до 100 символов, privacy public, madeForKids false, tags}. Для TikTok: PUBLIC_TO_EVERYONE, title короче описания.
 8. Отметь темы `[x]` в `queue/topics.md`, запиши в `queue/log.md` дату, файл, plannerUrl. Закоммить и запушь.
-9. Отправь Николаю краткую сводку через SendUserMessage: темы, время, ссылки plannerUrl, что нужно проверить. У него есть ночь удалить или поправить в Metricool.
+9. Отправь Николаю краткую сводку (добавь строку «Звук для TikTok:» с 1-2 треками из `queue/sounds.md` по типу ролика) через SendUserMessage: темы, время, ссылки plannerUrl, что нужно проверить. У него есть ночь удалить или поправить в Metricool.
 
 ## Описание поста
 Русский, длинный (5-10 строк), с эмодзи-пометками ✅⚠️❓, в конце призыв сохранить и вопрос в комментарии. Хештегов максимум 5, только английские.
