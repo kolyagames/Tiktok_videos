@@ -1,0 +1,9 @@
+{"tag":"ЛАУНЧЕРЫ · ГАЙД","cover":{"a":"Prism и","b":"другие лаунчеры","sub":["чем отличаются","проверено 04.11.2026"],"tag":"ЛАУНЧЕРЫ · ГАЙД"},
+ "scenes":[
+ {"t1":"Prism","t2":"Launcher","rows":[["Открытый код, лицензия GPL-3.0",0],["Много отдельных сборок (instances)",0],["Моды из Modrinth и CurseForge",0],["Windows, macOS, Linux, Steam Deck",0]],"foot":["Источник: prismlauncher.org, GitHub"],"pose":"present"},
+ {"t1":"Prism","t2":"важно","rows":[["Качай только с prismlauncher.org",2],["Dev-сборки нестабильны, не для всех",2],["Не связан с Mojang и Microsoft",0],["Форк MultiMC, не одобрен им",0]],"foot":["Источник: GitHub PrismLauncher"],"pose":"inspect"},
+ {"t1":"Modrinth","t2":"App","rows":[["Бесплатный, открытый код",0],["Установка модов в один клик",0],["Импорт сборок из GDLauncher, MultiMC",0],["Windows и Mac: бета на 04.11.2026",2]],"foot":["Источник: modrinth.com/app"],"pose":"confident"},
+ {"t1":"Официальный","t2":"лаунчер","rows":[["Windows, Mac и Linux",0],["Релизы и снапшоты игры",0],["Скины и быстрый вход в мир",0],["Скачивать с minecraft.net",2]],"foot":["Источник: minecraft.net/download"],"pose":"think"},
+ {"t1":"Итог","t2":"","rows":[["Просто играть: официальный",0],["Много сборок: Prism",0],["Моды с Modrinth: Modrinth App",0]],"foot":["Данные проверены 04.11.2026"],"pose":"wave"}
+ ],
+ "cta":"Сохрани, чтобы не потерять"}
