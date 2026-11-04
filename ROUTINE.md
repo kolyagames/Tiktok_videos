@@ -12,7 +12,7 @@
 6. `git add`, commit, `git push origin main`. Ссылки: `https://raw.githubusercontent.com/kolyagames/Tiktok_videos/main/videos/<файл>.mp4` и `.../images/<файл>/01.jpg` ... (проверь curl -I = 200; для переопубликации под тем же именем бери новое имя файла из-за кэша).
 7. Metricool (brand/blogId 7872482, timezone Asia/Jerusalem), ДВА отдельных поста на каждую тему в одно время (завтра 12:00 и 18:00 по Иерусалиму): а) YouTube Shorts: `createScheduledPost`, providers только youtube, media = ссылка на видео, youtubeData {type: "short", title до 100 символов, privacy public, madeForKids false, tags}; б) TikTok карусель: providers только tiktok, media = список ссылок на все JPEG-слайды по порядку, tiktokData {privacyOption PUBLIC_TO_EVERYONE, autoAddMusic: true, title короче описания, photoCoverIndex 0, disableComment false}. Решение Николая: автомузыку ставить всегда. Звук выбирает TikTok.
 8. Отметь темы `[x]` в `queue/topics.md`, запиши в `queue/log.md` дату, файл, plannerUrl. Закоммить и запушь.
-9. Отправь Николаю краткую сводку (строку про звук не нужна: в TikTok музыка автоматическая; напомни, что неудачный звук можно снести пост) через SendUserMessage: темы, время, ссылки plannerUrl, что нужно проверить. У него есть ночь удалить или поправить в Metricool.
+9. Отправь Николаю краткую сводку (про звук: в TikTok музыка автоматическая, напомни, что при неудачном звуке пост можно удалить) через SendUserMessage: темы, время, ссылки plannerUrl, что нужно проверить. У него есть ночь удалить или поправить в Metricool.
 
 ## Описание поста
 Русский, длинный (5-10 строк), с эмодзи-пометками ✅⚠️❓, в конце призыв сохранить и вопрос в комментарии. Хештегов максимум 5, только английские.
