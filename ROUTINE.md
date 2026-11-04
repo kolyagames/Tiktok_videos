@@ -7,12 +7,12 @@
 1. `git pull`. Открой `queue/topics.md`, возьми первые 2 темы без отметки `[x]`.
 2. По каждой теме найди факты через WebSearch/WebFetch. Минимум 2 источника, предпочтительно официальные сайты, GitHub, Modrinth, документация.
 3. Напиши спек `specs/YYYY-MM-DD_slug.json` (формат как в `specs/example.json`: cover, 5-8 слайдов rows по 3-5 строк, foot-подписи, cta). kind строки: 0 обычная, 2 предупреждение/оговорка (оранжевая), 1 опасность (красная, только по подтверждённым фактам).
-4. Рендер: `cd studio && python3 make_video.py ../specs/<файл>.json ../videos/<файл>.mp4` (без `-I`). Длина 35-60 с.
+4. Рендер: `cd studio && python3 make_video.py ../specs/<файл>.json ../videos/<файл>.mp4 --slides ../images/<файл>` (без `-I`). Получается видео с оригинальной музыкой (для YouTube) и JPEG-слайды 1080x1920 (для карусели TikTok). Длина видео 35-60 с.
 5. Проверка: вытащи ffmpeg-кадры 6-8 штук, посмотри через Read: нет обрезанного текста, нет перекрытий, текст читается. Исправь и перерендери при проблемах.
-6. `git add`, commit, `git push origin main`. Ссылка: `https://raw.githubusercontent.com/kolyagames/Tiktok_videos/main/videos/<файл>.mp4` (проверь curl -I = 200).
-7. Metricool (brand/blogId 7872482, timezone Asia/Jerusalem): `createScheduledPost`, providers tiktok + youtube, время завтра 12:00 и 18:00 по Иерусалиму (ролик 1 и ролик 2). Для YouTube: youtubeData {type: "short", title до 100 символов, privacy public, madeForKids false, tags}. Для TikTok: PUBLIC_TO_EVERYONE, title короче описания.
+6. `git add`, commit, `git push origin main`. Ссылки: `https://raw.githubusercontent.com/kolyagames/Tiktok_videos/main/videos/<файл>.mp4` и `.../images/<файл>/01.jpg` ... (проверь curl -I = 200; для переопубликации под тем же именем бери новое имя файла из-за кэша).
+7. Metricool (brand/blogId 7872482, timezone Asia/Jerusalem), ДВА отдельных поста на каждую тему в одно время (завтра 12:00 и 18:00 по Иерусалиму): а) YouTube Shorts: `createScheduledPost`, providers только youtube, media = ссылка на видео, youtubeData {type: "short", title до 100 символов, privacy public, madeForKids false, tags}; б) TikTok карусель: providers только tiktok, media = список ссылок на все JPEG-слайды по порядку, tiktokData {privacyOption PUBLIC_TO_EVERYONE, autoAddMusic: true, title короче описания, photoCoverIndex 0, disableComment false}. Решение Николая: автомузыку ставить всегда. Звук выбирает TikTok.
 8. Отметь темы `[x]` в `queue/topics.md`, запиши в `queue/log.md` дату, файл, plannerUrl. Закоммить и запушь.
-9. Отправь Николаю краткую сводку (добавь строку «Звук для TikTok:» с 1-2 треками из `queue/sounds.md` по типу ролика) через SendUserMessage: темы, время, ссылки plannerUrl, что нужно проверить. У него есть ночь удалить или поправить в Metricool.
+9. Отправь Николаю краткую сводку (строку про звук не нужна: в TikTok музыка автоматическая; напомни, что неудачный звук можно снести пост) через SendUserMessage: темы, время, ссылки plannerUrl, что нужно проверить. У него есть ночь удалить или поправить в Metricool.
 
 ## Описание поста
 Русский, длинный (5-10 строк), с эмодзи-пометками ✅⚠️❓, в конце призыв сохранить и вопрос в комментарии. Хештегов максимум 5, только английские.

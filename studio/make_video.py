@@ -40,5 +40,26 @@ def render(spec, outpath):
         prev = s.frame(s.dur - 0.01, skins[i][0].copy() if i in skins else None)
     p.stdin.close(); return p.wait()
 
+def slides(spec, outdir):
+    """JPEG-слайды 1080x1920 для фото-карусели TikTok (финальный кадр каждой сцены)."""
+    os.makedirs(outdir, exist_ok=True); SA.SC = build(spec); n = 0
+    for i, s in enumerate(SA.SC):
+        sk = SA._skin((i, 0)) if s.skin else None
+        im = s.frame(s.dur - 0.01, sk.copy() if sk is not None else None)
+        n += 1; im.convert('RGB').save(f'{outdir}/{n:02d}.jpg', quality=92)
+    return n
+
+def add_music(video, seed=0):
+    import music, tempfile
+    d = float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', video]))
+    wav = tempfile.mktemp(suffix='.wav'); music.save(music.gen(d, seed), wav); tmp = video + '.tmp.mp4'
+    subprocess.check_call(['ffmpeg', '-y', '-loglevel', 'error', '-i', video, '-i', wav, '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', tmp])
+    os.replace(tmp, video); os.remove(wav)
+
 if __name__ == '__main__':
-    sys.exit(render(json.load(open(sys.argv[1])), sys.argv[2]))
+    # python3 make_video.py spec.json OUT.mp4 [--slides DIR] [--no-music]
+    spec = json.load(open(sys.argv[1])); out = sys.argv[2]; a = sys.argv[3:]
+    rc = render(spec, out)
+    if rc == 0 and '--no-music' not in a: add_music(out, sum(map(ord, os.path.basename(out))) % 4)
+    if '--slides' in a: print('slides:', slides(spec, a[a.index('--slides') + 1]))
+    sys.exit(rc)
