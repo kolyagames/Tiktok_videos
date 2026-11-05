@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw
 TEAL = (43, 183, 166); TEAL_D = (28, 130, 120); TEAL_L = (110, 225, 205)
 SHELL = (29, 43, 83); SHELL_L = (52, 74, 130); CY = (80, 230, 255); YL = (255, 214, 77); WH = (245, 248, 250); BK = (14, 16, 28); PK = (255, 140, 150)
 
-def draw_crab(im, x, y, t, pose='idle', u=14, look=(1, 0)):
+def draw_crab(im, x, y, t, pose='idle', u=14, look=(1, 0), acc='none'):
     d = ImageDraw.Draw(im)
     def R(a, b, c, e, col):
         d.rectangle([x + a * u, y + b * u, x + (c + 1) * u - 1, y + (e + 1) * u - 1], fill=col)
@@ -34,6 +34,14 @@ def draw_crab(im, x, y, t, pose='idle', u=14, look=(1, 0)):
         if not blink:
             px = ex + (look[0] if look[0] else 0) * (1 if ex == 8 else 0) - (1 if look[0] > 0 and ex == 21 else 0)
             R(max(ex - 1, min(ex, px)), top + 1, max(ex - 1, min(ex, px)), top + 2, BK) if not wow else R(ex - 1, top, ex + 1, top + 2, BK) or R(ex, top + 1, ex, top + 1, WH)
+    if acc == 'glasses':
+        for ex in (8, 21):
+            R(ex - 2, top - 1, ex + 2, top - 1, BK); R(ex - 2, top + 3, ex + 2, top + 3, BK); R(ex - 2, top, ex - 2, top + 2, BK); R(ex + 2, top, ex + 2, top + 2, BK)
+        R(11, top + 1, 18, top + 1, BK)
+    elif acc == 'cap':
+        R(11, 3, 18, 5, (255, 85, 0)); R(11, 6, 18, 6, (170, 50, 0)); R(12, 4, 13, 4, (255, 160, 90))
+    elif acc == 'headphones':
+        R(10, 5, 19, 5, CY); R(10, 5, 10, 8, CY); R(19, 5, 19, 8, CY); R(9, 9, 10, 12, CY); R(19, 9, 20, 12, CY); R(9, 10, 9, 11, SHELL); R(20, 10, 20, 11, SHELL)
     # лицо
     R(12, 16, 12, 17, BK) if not blink else R(11, 17, 13, 17, TEAL_D)
     R(18, 16, 18, 17, BK) if not blink else R(17, 17, 19, 17, TEAL_D)
