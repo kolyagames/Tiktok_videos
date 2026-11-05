@@ -13,6 +13,29 @@ def font(sz, wt=900):
     if k not in _fc:
         f = ImageFont.truetype(HERE + '/Nunito.ttf', int(sz)); f.set_variation_by_axes([int(wt)]); _fc[k] = f
     return _fc[k]
+ACC = (130, 128, 255); ACC_D = (62, 60, 140)
+_pf = {}
+def pfont(sz):
+    k = int(sz)
+    if k not in _pf: _pf[k] = ImageFont.truetype(HERE + '/Monocraft-Bold.otf', k)
+    return _pf[k]
+def phead(im, xy, s, sz, fill=WHITE, off=6, anchor='lm'):
+    d = ImageDraw.Draw(im); d.text((xy[0] + off, xy[1] + off), s, font=pfont(sz), fill=ACC_D if fill != ACC else (30, 30, 80), anchor=anchor); d.text(xy, s, font=pfont(sz), fill=fill, anchor=anchor)
+def tag(im, s='IT · ЖЕЛЕЗО'):
+    f = pfont(26); w = f.getlength(s) + 50; ImageDraw.Draw(im).rounded_rectangle([80, 70, 80 + w, 122], 26, outline=ACC_D, width=3)
+    ImageDraw.Draw(im).ellipse([100, 91, 112, 103], fill=ACC); ImageDraw.Draw(im).text((126, 96), s, font=f, fill=GRAY, anchor='lm')
+def source(im, s): ImageDraw.Draw(im).text((80, 1530), s, font=font(26, 700), fill=(110, 112, 130), anchor='lm')
+def bg(t, base=None, accent=ACC):
+    im = GRID.copy() if base is None else base
+    gl = Image.new('RGBA', im.size, (0, 0, 0, 0)); ph = 2 * math.pi * t / 3; r = 470 + 22 * math.sin(ph)
+    ImageDraw.Draw(gl).ellipse([800 - r, 1150 - r, 800 + r, 1150 + r], fill=accent + (int(40 + 12 * math.sin(ph)),)); gl = gl.filter(ImageFilter.GaussianBlur(120)); im.paste(gl, (0, 0), gl)
+    ov = Image.new('RGBA', im.size, (0, 0, 0, 0)); od = ImageDraw.Draw(ov); rnd = np.random.default_rng(7)
+    for i in range(16):
+        bx = rnd.uniform(40, 1040); by = rnd.uniform(500, 1650); sz = rnd.uniform(10, 26); sp = int(rnd.integers(1, 3)); phi = rnd.uniform(0, 6.28)
+        yy = by - 30 * math.sin(sp * ph + phi) - 40 * t; yy = 400 + (yy - 400) % 1250; al = int(70 + 60 * math.sin(sp * ph + phi))
+        od.rectangle([bx, yy, bx + sz, yy + sz], fill=accent + (al,))
+    im.paste(ov, (0, 0), ov); return im
+
 def ease(u): u = max(0, min(1, u)); return u * u * (3 - 2 * u)
 def spring(u):  # с перелётом
     u = max(0, min(1, u)); return 1 - math.exp(-6 * u) * math.cos(14 * u)
@@ -26,7 +49,7 @@ LINES = [  # (старт, голос, текст)
     (6.2, 'irina', 'У эс-эс-ди нет подвижных частей. Он быстрее и тише.'),
     (10.45, 'ruslan', 'А минусы?'),
     (11.5, 'irina', 'Дороже за гигабайт, ячейки изнашиваются.'),
-    (14.3, 'irina', 'Выбирай под задачу.'),
+    (14.6, 'irina', 'Выбирай под задачу.'),
     (16.5, 'ruslan', 'Подписывайся!'),
 ]
 SR = 44100
@@ -69,7 +92,23 @@ def rich(im, cx, y, words, sz, base, hl=OR, wt=900):
     f = font(sz, wt); parts = [(w.strip('*'), w.startswith('*')) for w in words.split()]
     sp = f.getlength(' '); tw = sum(f.getlength(p) for p, _ in parts) + sp * (len(parts) - 1); x = cx - tw / 2; d = ImageDraw.Draw(im)
     for p, h in parts: d.text((x, y), p, font=f, fill=hl if h else base, anchor='lm'); x += f.getlength(p) + sp
+MODE = 'crab'
+_skc = {}
+SKPOSE = {'idle': 'confident', 'talk': 'present', 'point': 'inspect', 'wow': 'wave'}
+def skin_sprite(name, k, sc):
+    key = (name, k, sc)
+    if key not in _skc:
+        import skin as SK
+        P = SK.POSES[name]; q = dict(P['pose']); ph = 2 * math.pi * (k % 60) / 60
+        q.update(turn=q.get('turn', 0) + 6 * math.sin(ph), bob=0.3 * math.sin(2 * ph), nod=q.get('nod', 0) + 2 * math.sin(2 * ph))
+        _skc[key] = SK.render(pose=q, yaw=P['yaw'] + 5 * math.sin(ph), tilt=P['tilt'], scale=sc, size=(1000, 1150), floor=1050, ss=2)
+    return _skc[key]
 def mascot(im, cx, by, t, pose='idle', acc='none', u=11, flip=False):
+    if MODE == 'skin':
+        sp = skin_sprite(SKPOSE.get(pose, 'confident'), int(t * 30) % 60, round(u * 1.0))
+        im.paste(sp, (int(cx - 500), int(by - 1050)), sp); return
+    return mascot_crab(im, cx, by, t, pose, acc, u, flip)
+def mascot_crab(im, cx, by, t, pose='idle', acc='none', u=11, flip=False):
     tmp = Image.new('RGBA', (u * 40, u * 32), (0, 0, 0, 0))
     crab.draw_crab(tmp, 0, 0, t, pose, u, (1, 0), acc)
     im.paste(tmp, (int(cx - u * 19), int(by - u * 29)), tmp)
@@ -77,13 +116,13 @@ def mascot(im, cx, by, t, pose='idle', acc='none', u=11, flip=False):
 # A: логотип из разлетающихся пикселей
 def title_blocks():
     mask = Image.new('L', (W, 420), 0); d = ImageDraw.Draw(mask)
-    d.text((W / 2, 110), 'HDD или', font=font(190, 900), fill=255, anchor='mm'); d.text((W / 2, 300), 'SSD?', font=font(230, 900), fill=255, anchor='mm')
+    d.text((W / 2, 110), 'HDD или', font=pfont(150), fill=255, anchor='mm'); d.text((W / 2, 300), 'SSD?', font=pfont(210), fill=255, anchor='mm')
     a = np.array(mask); B = 14; blocks = []; rnd = random.Random(3)
     for y in range(0, 420, B):
         for x in range(0, W, B):
             if a[y:y + B, x:x + B].mean() > 110:
                 ang = rnd.uniform(0, 6.28); r = rnd.uniform(500, 1400)
-                blocks.append((x, y + 640, x + math.cos(ang) * r, y + 640 + math.sin(ang) * r, rnd.uniform(0, 0.8), rnd.choice([OR, OR, WHITE, GR])))
+                blocks.append((x, y + 640, x + math.cos(ang) * r, y + 640 + math.sin(ang) * r, rnd.uniform(0, 0.8), rnd.choice([ACC, ACC, WHITE, OR])))
     return blocks, B
 BLOCKS, BS = title_blocks()
 def scene_title(im, t):
@@ -92,14 +131,15 @@ def scene_title(im, t):
         u = ease((t - dl) / 1.6)
         if t < dl: continue
         x = lerp(sx, tx, u); y = lerp(sy, ty, u)
-        c = col if u < 0.97 else (WHITE if col == WHITE or (tx // BS + ty // BS) % 5 else OR)
+        c = col if u < 0.97 else (WHITE if (tx // BS + ty // BS) % 4 else ACC)
         d.rectangle([x, y, x + BS - 2, y + BS - 2], fill=mix(BG, c, min(1, u * 2 + 0.3)))
     if t > 2.0: txt(im, (W / 2, 1080), 'что выбрать для компьютера', 44, GRAY, 700)
 
 # B: плашка с волной -> окно файла
 def scene_wave(im, t, amp):
+    phead(im, (80, 250), 'Что это?', 86, WHITE, 6)
     u = spring(t / 0.7); w = lerp(400, 940, min(1, u)); morph = ease((t - 1.3) / 0.6)
-    top = lerp(760, 560, morph); bot = lerp(1140, 1420, morph)
+    top = lerp(760, 560, morph); bot = lerp(1140, 1160 if MODE == 'skin' else 1420, morph)
     cx = W / 2; box = (cx - w / 2, top, cx + w / 2, bot)
     card(im, box, mix(WHITE, DK, morph))
     if morph < 0.5:
@@ -121,31 +161,30 @@ def scene_wave(im, t, amp):
                 shown = b[:int(len(b) * k)]
                 txt(im, (x0 + 50, y0 + 150 + i * 110), '> ' + a, 54, OR if a == 'HDD' else GR, 900, 'lm'); txt(im, (x0 + 50, y0 + 205 + i * 110), shown, 34, WHITE, 700, 'lm')
         if (t * 2) % 2 < 1: txt(im, (x0 + 50, y0 + 380), '_', 54, WHITE, 900, 'lm')
-    mascot(im, cx, top + 10, t, 'talk', 'glasses', 12)
+    mascot(im, cx, 1580 if MODE == 'skin' else top + 10, t, 'talk', 'glasses', 12); source(im, 'Источник: Wikipedia, Solid-state drive')
 
 # C: стопка карточек + счётчик
 CARDS = [('Нет *подвижных* частей', 'меньше механического износа'), ('Быстрее *доступ* к данным', 'ниже задержки'), ('Устойчив к *ударам*', 'не боится тряски'), ('Работает *тихо*', 'без шума вращения')]
 ACCS = ['none', 'headphones', 'cap', 'glasses']
 def scene_cards(im, t):
-    n = int(min(len(CARDS), t / 1.0 + 0.0001)) if t < 4.0 else len(CARDS)
-    cnt = min(len(CARDS), int(t / 1.0)) if t < 4 else 4
-    txt(im, (W / 2, 330), 'ПЛЮСОВ SSD', 40, GRAY, 800)
-    txt(im, (W / 2, 470), str(cnt), 190, OR if cnt < 4 else GR, 900)
-    for i in range(len(CARDS)):  # нижние в стопке
-        if i > min(cnt, 3): break
-    idx = min(len(CARDS) - 1, int(t / 1.0))
-    # стопка позади
-    for k in (2, 1):
-        card(im, (150 + k * 12, 700 + k * 22, 930 - k * 12, 1180 + k * 22), mix(LG, BG, 0.25 * k))
-    ph = (t % 1.0); flip = ease(ph / 0.3)
-    sx = abs(math.cos(flip * math.pi / 2)) if ph < 0.3 else 1.0
-    w = 780 * max(0.04, 1 - 0 if ph >= 0.3 else sx); cx = W / 2
-    if idx < len(CARDS):
+    idx = min(len(CARDS) - 1, int(t / 1.0)); ph = t - int(t / 1.0) if t < 4 else 1.0
+    cnt = idx + (1 if ph >= 0.2 else 0)
+    phead(im, (80, 250), 'Плюсы SSD', 74, WHITE, 6)
+    txt(im, (W - 130, 250), f'{cnt}/4', 80, OR if cnt < 4 else GR, 900, 'mm')
+    for k in (2, 1):   # стопка позади
+        card(im, (170 + k * 10, 700 + k * 18, 910 - k * 10, 1180 + k * 18), mix((60, 60, 74), BG, 0.2 * k))
+    cx = W / 2
+    def draw(i, sc):
+        w = 740 * sc
+        if w < 10: return
         card(im, (cx - w / 2, 640, cx + w / 2, 1180), WHITE)
-        if w > 500:
-            rich(im, cx, 860, CARDS[idx][0], 54, DK); txt(im, (cx, 960), CARDS[idx][1], 36, GRAY, 700)
-            txt(im, (cx - 330, 700), f'{idx + 1}/4', 34, GRAY, 800, 'lm')
-    mascot(im, W / 2, 1520, t, 'talk', ACCS[idx % 4], 14)
+        if sc > 0.6:
+            rich(im, cx, 860, CARDS[i][0], 54, DK); txt(im, (cx, 960), CARDS[i][1], 36, GRAY, 700)
+            txt(im, (cx - 300, 700), f'{i + 1}', 40, ACC, 900, 'lm')
+    if ph < 0.1 and idx > 0: draw(idx - 1, 1 - ease(ph / 0.1))
+    elif ph < 0.1: pass
+    else: draw(idx, ease((ph - 0.1) / 0.1))
+    mascot(im, W / 2, 1600 if MODE == 'skin' else 1520, t, 'talk', ACCS[idx % 4], 14)
 
 # D: зелёный фон, маскот прыгает по баблам
 def scene_bubbles(im, t, tt):
@@ -153,7 +192,8 @@ def scene_bubbles(im, t, tt):
     gc = mix(base, WHITE, 0.15)
     for x in range(0, W, 40): d.line([(x, 0), (x, H)], fill=gc)
     for y in range(0, H, 40): d.line([(0, y), (W, y)], fill=gc)
-    B = [('минусы', 540, 520, WHITE, DK), ('дороже за гигабайт', 330, 900, DK, WHITE), ('износ при записи', 760, 1260, WHITE, OR)]
+    phead(im, (80, 250), 'Минусы SSD', 74, WHITE, 6)
+    B = [('дороже за гигабайт', 540, 520, WHITE, DK), ('ячейки изнашиваются', 500, 900, DK, WHITE), ('HDD дешевле', 760, 1260, WHITE, OR)]
     for i, (s, bx, by, bg, fg) in enumerate(B):
         k = spring((tt - 0.25 - i * 1.15) / 0.45)
         if k <= 0: continue
@@ -161,14 +201,15 @@ def scene_bubbles(im, t, tt):
         card(im, (bx - w * k / 2, by - h / 2, bx + w * k / 2, by + h / 2), bg, 60)
         if k > 0.7: txt(im, (bx, by), s, 52, fg)
     # прыжки по баблам
-    pts = [(540, 520), (330, 900), (760, 1260), (540, 1560)]
+    pts = [(540, 520), (500, 900), (760, 1260), (540, 1560)]
     seg = min(2.999, max(0, (tt - 0.2) / 1.15)); i = int(seg); u = seg - i
     ax, ay = pts[i]; bx_, by_ = pts[i + 1]
     x = lerp(ax, bx_, ease(u)); y = lerp(ay, by_, u) - math.sin(u * math.pi) * 260 - 70
-    mascot(im, x, y + 40, t, 'wow' if u < 0.8 else 'talk', ['headphones', 'cap', 'glasses'][i % 3], 12)
+    mascot(im, x, y if MODE == 'skin' else y + 40, t, 'wow' if u < 0.8 else 'talk', ['headphones', 'cap', 'glasses'][i % 3], 12)
 
 # E: штамп
 def scene_stamp(im, t, tt):
+    phead(im, (80, 250), 'Итог', 96, ACC, 6)
     cx = W / 2; k = spring(tt / 0.5)
     card(im, (120, 520, 960, 1000), WHITE)
     rich(im, cx, 640, 'Системе и программам:', 46, DK); txt(im, (cx, 730), 'обычно SSD', 90, GR, 900)
@@ -178,11 +219,12 @@ def scene_stamp(im, t, tt):
         st = Image.new('RGBA', (900, 260), (0, 0, 0, 0)); d = ImageDraw.Draw(st)
         d.rounded_rectangle([6, 6, 894, 254], 26, outline=OR, width=14); d.text((450, 130), 'ВЫБИРАЙ ПО ЗАДАЧЕ', font=font(70, 900), fill=OR, anchor='mm')
         st = st.rotate(ang, expand=True, resample=Image.BICUBIC); st = st.resize((int(st.width * s), int(st.height * s)), Image.BICUBIC)
-        im.paste(st, (int(cx - st.width / 2), int(1250 - st.height / 2)), st)
-    mascot(im, cx, 1700, t, 'point', 'cap', 13)
+        im.paste(st, (int(cx - st.width / 2), int((1240 if MODE == 'skin' else 1250) - st.height / 2)), st)
+    mascot(im, cx, 1640 if MODE == 'skin' else 1700, t, 'point', 'cap', 13)
 
 # F: прогресс-бар
 def scene_progress(im, t, tt):
+    phead(im, (80, 250), 'Загрузка вывода', 56, WHITE, 5)
     p = ease(tt / 2.4); x0, x1, y = 120, 960, 1000
     card(im, (x0, y - 40, x1, y + 40), (50, 50, 60), 40, False)
     ImageDraw.Draw(im).rounded_rectangle([x0, y - 40, x0 + max(80, (x1 - x0) * p), y + 40], 40, fill=OR if p < 1 else GR)
@@ -196,7 +238,7 @@ def scene_progress(im, t, tt):
             txt(im, (W / 2 + 30, 1250), 'досмотрено', 58, WHITE, 900)
 
 def frame(t, amp):
-    im = GRID.copy()
+    im = bg(t); tag(im)
     if t < 3.0: scene_title(im, t)
     elif t < 6.0: scene_wave(im, t - 3.0, amp)
     elif t < 10.0: scene_cards(im, t - 6.0)
@@ -215,4 +257,6 @@ def main(out):
     p.stdin.close(); p.wait()
     subprocess.check_call(['ffmpeg', '-y', '-loglevel', 'error', '-i', tmpv, '-i', tmpa, '-c:v', 'copy', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=9', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', out])
     os.remove(tmpv); os.remove(tmpa)
-if __name__ == '__main__': main(sys.argv[1])
+if __name__ == '__main__':
+    if '--skin' in sys.argv: MODE = 'skin'
+    main(sys.argv[1])
