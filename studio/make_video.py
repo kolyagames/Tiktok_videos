@@ -69,7 +69,7 @@ def crab_overlay(im, T, spec):
     for st, x, v in VOICE:
         if st <= T < st + len(x) / 44100: pose = 'talk'; look = (1, 0) if v in ('ruslan', 'denis', 'dmitri') else (-1, 0)
     if T < 1.2 and not VOICE: pose = 'wow'
-    im = im.copy(); crab.draw_crab(im, 520, 1470, T, pose, 13, look); return im
+    im = im.copy(); crab.draw_crab(im, 500, 1250, T, pose, 10, look); return im
 
 def render(spec, outpath):
     SA.SC = build(spec); SC = SA.SC; FPS = 30; TR = 0.35
