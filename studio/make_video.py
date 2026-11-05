@@ -21,8 +21,40 @@ def build(spec):
     out.append(SA.cta(spec.get('cta', 'Сохрани, чтобы не потерять')))
     return out
 
+VOICE = []  # [(start_sec, np.array float32 @44100)]
+
+def prep_voice(spec, SC):
+    """Озвучка: у сцены может быть "say": [["ruslan","реплика"],["irina","реплика"]]. Длина сцены растягивается под речь."""
+    import voice, wave, tempfile, numpy as np
+    global VOICE; VOICE = []; sc = spec['scenes']; t0 = 0.0
+    for i, s in enumerate(SC):
+        say = spec['cover'].get('say') if i == 0 else (sc[i - 1].get('say') if i <= len(sc) else spec.get('cta_say'))
+        pos = 0.35
+        for v, text in (say or []):
+            f = tempfile.mktemp(suffix='.wav'); voice.tts(text, f, spec.get('speed', 1.0), v)
+            w = wave.open(f); x = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768; sr = w.getframerate(); os.remove(f)
+            x = np.interp(np.arange(int(len(x) * 44100 / sr)) / 44100 * sr, np.arange(len(x)), x).astype(np.float32)
+            VOICE.append((t0 + pos, x)); pos += len(x) / 44100 + 0.3
+        if say: s.dur = max(s.dur, pos + 0.4)
+        t0 += s.dur
+
+def add_voice_music(video, seed=0):
+    import music, tempfile, numpy as np
+    d = float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', video])); SR = 44100; N = int(d * SR)
+    vt = np.zeros(N, np.float32)
+    for st, x in VOICE:
+        i = int(st * SR); j = min(N, i + len(x)); vt[i:j] += x[:j - i]
+    env = np.convolve(np.abs(vt), np.ones(int(0.12 * SR)) / int(0.12 * SR), 'same'); env = np.minimum(1, env / 0.05)
+    env = np.convolve(env, np.ones(int(0.25 * SR)) / int(0.25 * SR), 'same')
+    m = music.gen(d, seed); m = np.pad(m, (0, max(0, N - len(m))))[:N]
+    mix = np.tanh(m * 0.5 * (1 - 0.7 * env) + vt * 1.1)
+    wav = tempfile.mktemp(suffix='.wav'); music.save(mix, wav); tmp = video + '.tmp.mp4'
+    subprocess.check_call(['ffmpeg', '-y', '-loglevel', 'error', '-i', video, '-i', wav, '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', tmp])
+    os.replace(tmp, video); os.remove(wav)
+
 def render(spec, outpath):
     SA.SC = build(spec); SC = SA.SC; FPS = 30; TR = 0.35
+    if any(x.get('say') for x in spec['scenes']) or spec['cover'].get('say'): prep_voice(spec, SC)
     with Pool(4) as pool:
         skins = {}
         for i, s in enumerate(SC):
@@ -60,6 +92,8 @@ if __name__ == '__main__':
     # python3 make_video.py spec.json OUT.mp4 [--slides DIR] [--no-music]
     spec = json.load(open(sys.argv[1])); out = sys.argv[2]; a = sys.argv[3:]
     rc = render(spec, out)
-    if rc == 0 and '--no-music' not in a: add_music(out, sum(map(ord, os.path.basename(out))) % 4)
+    if rc == 0 and '--no-music' not in a:
+        sd = sum(map(ord, os.path.basename(out))) % 4
+        add_voice_music(out, sd) if VOICE else add_music(out, sd)
     if '--slides' in a: print('slides:', slides(spec, a[a.index('--slides') + 1]))
     sys.exit(rc)
